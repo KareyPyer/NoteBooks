@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "num_records": 1000,
+    "seed": 42,
+    "output_format": "csv",
+    "output_filename": "dataset_v2.csv"
+  },
+
+  "variables": {
+    "age": {
+      "type": "continuous",
+      "distribution": "normal",
+      "mean": 35,
+      "stddev": 10
+    },
+    "income": {
+      "type": "continuous",
+      "distribution": "lognormal",
+      "mean": 10.5,
+      "stddev": 0.8
+    },
+    "experience_years": {
+      "type": "continuous",
+      "distribution": "exponential",
+      "scale": 5
+    },
+    "city": {
+      "type": "categorical",
+      "categories": ["Paris", "Lyon", "Marseille", "Toulouse"],
+      "probabilities": [0.4, 0.25, 0.2, 0.15]
+    },
+    "is_customer": {
+      "type": "discrete",
+      "distribution": "binomial",
+      "n": 1,
+      "p": 0.3
+    },
+    "nb_purchases": {
+      "type": "discrete",
+      "distribution": "poisson",
+      "lam": 3
+    },
+    "signup_date": {
+      "type": "datetime",
+      "start": "2020-01-01",
+      "end": "2025-12-31",
+      "trend": "increasing"
+    }
+  },
+
+  "correlations": {
+    "group1": {
+      "variables": ["age", "income"],
+      "covariance_matrix": [
+        [100, 250],
+        [250, 1000]
+      ]
+    }
+  },
+
+  "dependencies": {
+    "discount": {
+      "type": "derived",
+      "formula": "income * 0.1 + age * 5",
+      "noise": {"type": "normal", "mean": 0, "stddev": 10}
+    },
+    "shipping_cost": {
+      "type": "conditional",
+      "rules": [
+        {"condition": "city == 'Paris'", "value_distribution": {"type": "constant", "value": 5}},
+        {"condition": "city == 'Marseille'", "value_distribution": {"type": "constant", "value": 12}},
+        {"default": {"type": "constant", "value": 8}}
+      ]
+    }
+  },
+
+  "target": {
+    "name": "purchase_amount",
+    "type": "regression",
+    "formula": "0.5 * income + 20 * age - 100 * is_customer + discount",
+    "noise": {"type": "normal", "mean": 0, "stddev": 50},
+    "transform": "abs"
+  },
+
+  "data_quality": {
+    "missing_values": {
+      "age": {"rate": 0.05, "mechanism": "MCAR"},
+      "income": {"rate": 0.1, "mechanism": "MAR", "depends_on": "is_customer"}
+    },
+    "outliers": {
+      "income": {"rate": 0.02, "method": "gaussian_smear", "multiplier": 5}
+    },
+    "label_noise": {
+      "city": {"rate": 0.03}
+    }
+  }
+}
